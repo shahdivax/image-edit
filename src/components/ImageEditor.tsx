@@ -19,6 +19,8 @@ import {
   Triangle,
   Highlighter,
   Pen,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 
 function ImageEditor() {
@@ -39,6 +41,7 @@ function ImageEditor() {
   const [drawSize, setDrawSize] = useState(5);
   const [drawTool, setDrawTool] = useState('pen');
   const [highlighterOpacity, setHighlighterOpacity] = useState(0.5);
+  const [zoom, setZoom] = useState(1);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +69,7 @@ function ImageEditor() {
       applyFilters();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, crop]);
+  }, [filters, crop, zoom]);
 
   const resetCanvas = () => {
     const canvas = canvasRef.current;
@@ -106,16 +109,22 @@ function ImageEditor() {
     const dWidth = canvas.width;
     const dHeight = canvas.height;
 
+    // Apply zoom
+    const zoomedWidth = dWidth * zoom;
+    const zoomedHeight = dHeight * zoom;
+    const offsetX = (canvas.width - zoomedWidth) / 2;
+    const offsetY = (canvas.height - zoomedHeight) / 2;
+
     ctx.drawImage(
       imageRef.current,
       sx,
       sy,
       sWidth,
       sHeight,
-      0,
-      0,
-      dWidth,
-      dHeight
+      offsetX,
+      offsetY,
+      zoomedWidth,
+      zoomedHeight
     );
 
     // Apply sharpening if necessary
@@ -337,6 +346,17 @@ function ImageEditor() {
     }
   };
 
+  const handleZoom = (direction: 'in' | 'out') => {
+    setZoom((prevZoom) => {
+      const newZoom = direction === 'in' ? prevZoom * 1.1 : prevZoom / 1.1;
+      return Math.max(0.1, Math.min(5, newZoom)); // Limit zoom between 0.1x and 5x
+    });
+  };
+
+  const resetZoom = () => {
+    setZoom(1);
+  };
+
   return (
     <div
       className={`min-h-screen ${
@@ -345,7 +365,7 @@ function ImageEditor() {
     >
       <div className="container mx-auto p-4">
         <h1 className="text-4xl font-bold mb-8 text-center">
-          Advanced Image Editor
+          Image Editor
         </h1>
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-2/3">
@@ -380,6 +400,26 @@ function ImageEditor() {
               >
                 <Download className="inline-block mr-2" />
                 Save Image
+              </button>
+              <button
+                className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"
+                onClick={() => handleZoom('in')}
+              >
+                <ZoomIn className="inline-block mr-2" />
+                Zoom In
+              </button>
+              <button
+                className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded"
+                onClick={() => handleZoom('out')}
+              >
+                <ZoomOut className="inline-block mr-2" />
+                Zoom Out
+              </button>
+              <button
+                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+                onClick={resetZoom}
+              >
+                Reset Zoom
               </button>
             </div>
           </div>
